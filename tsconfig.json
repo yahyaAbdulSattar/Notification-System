@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2021",
+
+    "types": ["node"],
+    /* Need this: */
+    /* npm install -D @types/node */
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+
+  
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
