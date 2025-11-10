@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import notificationRouter from './api/routes/notification.route.js'
+import userRouter from './api/routes/user.routes.js'
 
 dotenv.config();
 
@@ -11,10 +13,11 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (_, res) => {
-  res.json({ status: "ok" });
-});
 
+app.use("/notifications", notificationRouter);
+app.use("/users", userRouter);
+
+app.get("/health", (_, res) => res.json({ status: "ok" }));
 app.get("/db-test", async (_, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -23,7 +26,5 @@ app.get("/db-test", async (_, res) => {
     res.status(500).json({ db: "error", err });
   }
 });
-
-
 
 export default app;
