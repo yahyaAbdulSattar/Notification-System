@@ -1,12 +1,8 @@
-import Redis from "ioredis";
-import { config } from "./env.js";
+import { Redis } from "ioredis";
 
-export const redis = new Redis(config.redisUrl);
+export const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+console.log("Connecting to:", process.env.REDIS_URL);
 
-redis.on("connect", () => {
-  console.log("[redis] connected");
-});
+redis.on("connect", () => console.log("[redis] connected"));
+redis.on("error", (err: any) => console.error("[redis] error:", err));
 
-redis.on("error", (err: any) => {
-  console.error("[redis] error:", err);
-});
