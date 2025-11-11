@@ -26,6 +26,7 @@ model UserPreference {
   userId   String  @unique
   user     User    @relation(fields: [userId], references: [id])
   channel  String  // 'push' | 'email' | 'both'
+  mode     String  @default("instant") // 'instant' | 'digest'
 }
 
 model Notification {
