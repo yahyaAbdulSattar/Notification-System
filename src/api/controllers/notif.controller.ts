@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import * as service from "../service/notif.service.js";
+import * as service from "../services/notif.service.js";
 
 export const handleTaskUpdate = async (req: Request, res: Response) => {
   const { taskId, userIds, priority } = req.body;

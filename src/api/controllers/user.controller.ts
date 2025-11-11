@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import * as service from "../service/user.service.js";
+import * as service from "../services/user.service.js";
 
 export const listUsers = async (_: Request, res: Response) => {
   const users = await service.listUsers();

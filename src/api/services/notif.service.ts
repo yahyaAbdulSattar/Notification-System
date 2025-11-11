@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { publishUrgentNotification } from "../../modules/notifications/producers/urgent.producer.js";
 
 interface TaskUpdateData {
   taskId: string;
@@ -19,6 +20,18 @@ const processTaskUpdate = async (data: TaskUpdateData) => {
         status: "pending",
       },
     });
+
+     // For now only handle urgent publishing
+    if (data.priority === "urgent") {
+      await publishUrgentNotification({
+        id: notif.id,
+        taskId: notif.taskId,
+        userId: notif.userId,
+        priority: notif.priority,
+        eventType: notif.eventType,
+      });
+    }
+    
     notifications.push(notif);
   }
 
