@@ -5,7 +5,7 @@ import { EXCHANGE } from "../setup.js";
 export async function publishUrgentNotification(payload: any) {
     const { channel } = getRabbit();
 
-    const routingKey = "notification.urgent"
+    const routingKey = "notifications.urgent"
 
     await channel.publish(EXCHANGE, routingKey, Buffer.from(JSON.stringify(payload)), {
         persistent: true,

@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "../../config/prisma.js";
 
 const listUsers = async () => {
   return prisma.user.findMany({ include: { preferences: true } });

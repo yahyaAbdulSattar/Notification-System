@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "../../config/prisma.js";
 import { publishUrgentNotification } from "../../modules/notifications/producers/urgent.producer.js";
 
 interface TaskUpdateData {
@@ -31,7 +31,7 @@ const processTaskUpdate = async (data: TaskUpdateData) => {
         eventType: notif.eventType,
       });
     }
-    
+
     notifications.push(notif);
   }
 
