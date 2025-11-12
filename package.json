@@ -28,7 +28,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "worker": "tsx watch src/queues/worker.ts"
+    "worker": "tsx watch src/queues/worker.ts",
+    "worker:digest": "tsx src/queues/digest.worker.ts",
+    "worker:dlq": "tsx src/queues/dlq.worker.ts"
   },
   "keywords": [],
   "author": "",
