@@ -4,8 +4,6 @@ import prismaPkg from "@prisma/client";
 const { PrismaClient } = prismaPkg;
 const prisma = new PrismaClient();
 
-// TODO: find why logs are not working: after work
-
 async function startDlqWorker() {
   const { channel } = await initRabbit();
   await setupQueues(channel);
