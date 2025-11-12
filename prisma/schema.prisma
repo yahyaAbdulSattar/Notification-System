@@ -34,7 +34,7 @@ model Notification {
   taskId     String
   userId     String
   user       User     @relation(fields: [userId], references: [id])
-  priority   String
+  priority   Strin
   eventType  String
   status     String   // 'pending' | 'sent' | 'failed'
   createdAt  DateTime @default(now())

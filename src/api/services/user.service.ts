@@ -6,10 +6,14 @@ const listUsers = async () => {
 
 const seedUsers = async () => {
   const demo = [
-    { name: "Ali", email: "ali@example.com", channel: "push" },
-    { name: "Fatima", email: "fatima@example.com", channel: "email" },
-    { name: "Omar", email: "omar@example.com", channel: "both" },
+    { name: "Ali Khan", email: "ali.khan@example.com", channel: "push", mode: "instant" },
+    { name: "Fatima Zahra", email: "fatima.zahra@example.com", channel: "email", mode: "digest" },
+    { name: "Omar Siddiqui", email: "omar.siddiqui@example.com", channel: "both", mode: "instant" },
+    { name: "Layla Hasan", email: "layla.hasan@example.com", channel: "email", mode: "digest" },
+    { name: "Yusuf Rahman", email: "yusuf.rahman@example.com", channel: "push", mode: "instant" },
+    { name: "Aisha Ahmed", email: "aisha.ahmed@example.com", channel: "both", mode: "digest" },
   ];
+
 
   const created = [];
 
@@ -22,8 +26,8 @@ const seedUsers = async () => {
 
     await prisma.userPreference.upsert({
       where: { userId: user.id },
-      update: { channel: u.channel },
-      create: { userId: user.id, channel: u.channel },
+      update: { channel: u.channel, mode: u.mode },
+      create: { userId: user.id, channel: u.channel, mode: u.mode },
     });
 
     created.push(user);
