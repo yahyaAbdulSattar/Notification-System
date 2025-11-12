@@ -1,7 +1,7 @@
 import { prisma } from "../../../config/prisma.js";
 import { getRabbit } from "../../../config/rabbitmq.js";
 import { redis } from "../../../config/redis.js";
-import { EXCHANGE } from "../setup.js";
+import { recordAttempt } from "../services/notif.service.js";
 import { tryConsumeToken } from "../util/throttle.util.js";
 
 // config
@@ -161,27 +161,4 @@ export async function startUrgentConsumer() {
   });
 }
 
-export async function recordAttempt(notificationId: string, attemptNumber: number, result: string, error?: string) {
-  await prisma.notificationAttempt.create({
-    data: {
-      notificationId,
-      attemptNumber,
-      result,
-      error: error || null,
-    },
-  });
 
-  // increment attemptsCount + set lastAttemptAt
-  await prisma.notification.update({
-    where: { id: notificationId },
-    data: {
-      attemptsCount: { increment: 1 },
-      lastAttemptAt: new Date(),
-      ...(result === "success" && {
-        status: "sent",
-        sentAt: new Date(),
-      }),
-      ...(result === "fail" && { status: "failed" }),
-    },
-  });
-}
