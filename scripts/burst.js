@@ -72,7 +72,7 @@ async function run() {
   const results = [];
   const startTime = Date.now();
   if (PARALLEL) {
-    const concurrency = Number(process.env.BURST_CONCURRENCY || 50);
+    const concurrency = Number(argv.concurrency || process.env.BURST_CONCURRENCY || 50);
     const batches = [];
     for (let i = 0; i < COUNT; i += concurrency) {
       const chunk = Array.from({ length: Math.min(concurrency, COUNT - i) }, (_, j) => i + j);
