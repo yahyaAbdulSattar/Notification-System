@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma.js";
 import { publishUrgentNotification } from "../../modules/notifications/producers/urgent.producer.js";
 import { publishNormalNotification } from "../../modules/notifications/producers/normal.producer.js";
 import * as userPrefRepo from "../../modules/users/repos/userPref.repo.js";
+import { inc } from "../../metrics/metrics.js";
 
 interface TaskUpdateData {
   taskId: string;
@@ -49,6 +50,7 @@ const processTaskUpdate = async (data: TaskUpdateData) => {
     }
 
     notifications.push(notif);
+    inc("notifications_published_total", 1);
   }
 
   return notifications;

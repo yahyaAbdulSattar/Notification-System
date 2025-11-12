@@ -1,6 +1,8 @@
 import { prisma } from "../../../config/prisma.js";
+import { inc } from "../../../metrics/metrics.js";
 
 export async function recordAttempt(notificationId: string, attemptNumber: number, result: string, error?: string) {
+  inc("attempts_total", 1);
   await prisma.notificationAttempt.create({
     data: {
       notificationId,

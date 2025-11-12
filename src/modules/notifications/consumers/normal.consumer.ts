@@ -1,5 +1,6 @@
 import { getRabbit } from "../../../config/rabbitmq.js";
 import { redis } from "../../../config/redis.js";
+import { inc } from "../../../metrics/metrics.js";
 
 const QUEUE = "notifications.normal";
 const BATCH_KEY_PREFIX = "batch:"; // batch:user123
@@ -28,6 +29,8 @@ export async function startNormalConsumer() {
             if (ttl === -1) {
                 await redis.expire(userKey, BATCH_TTL_SECONDS);
             }
+
+            inc("normal_buffered_total", 1);
 
             console.log(`[normal.worker] buffered -> user:${notif.userId} task:${notif.taskId}`);
             channel.ack(msg);

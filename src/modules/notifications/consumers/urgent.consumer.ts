@@ -1,6 +1,7 @@
 import { prisma } from "../../../config/prisma.js";
 import { getRabbit } from "../../../config/rabbitmq.js";
 import { redis } from "../../../config/redis.js";
+import { inc } from "../../../metrics/metrics.js";
 import { recordAttempt } from "../services/notif.service.js";
 import { tryConsumeToken } from "../util/throttle.util.js";
 
@@ -47,6 +48,8 @@ export async function startUrgentConsumer() {
     const currentAttempts = Number(msg.properties.headers?.attempts ?? 0);
     const data = JSON.parse(msg.content.toString());
     const { userId, taskId, preference } = data;
+
+    inc("urgent_processed_total", 1);
 
     try {
       const { allowed, tokensLeft } = await tryConsumeToken(userId);
@@ -106,6 +109,7 @@ export async function startUrgentConsumer() {
       console.warn(`[urgent.worker] delivery failed for user:${msg ? JSON.stringify(msg.properties) : ''} attempt=${nextAttempt}:`, err.message);
 
       if (nextAttempt > MAX_RETRIES) {
+        inc("dlq_count_total", 1);
         // send to DLQ queue payload with metadata
         const dlqPayload = {
           payload: JSON.parse(msg.content.toString()),

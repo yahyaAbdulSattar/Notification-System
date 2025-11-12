@@ -1,5 +1,6 @@
 import { prisma } from "../../../config/prisma.js";
 import { redis } from "../../../config/redis.js";
+import { inc } from "../../../metrics/metrics.js";
 
 export async function flushAllBatches() {
   const keys = await redis.keys("batch:*");
@@ -43,6 +44,9 @@ export async function flushBatch(key: string) {
   if (preference.channel === "email" || preference.channel === "both") {
     console.log(`[BATCH_DELIVERED email] user=${userId} count=${count}`);
   }
+
+  inc("digest_flushed_total", 1);
+  inc("digest_notifications_total", parsed.length);
 
   // persist audit info for each notification
   for (const notif of parsed) {
