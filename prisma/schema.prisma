@@ -36,7 +36,7 @@ model Notification {
   user            User                   @relation(fields: [userId], references: [id])
   priority        String
   eventType       String
-  channel         String                 // push | email | both
+  channel         String                 @default("both") // push | email | both
   status          String                 // pending | sent | failed
   attemptsCount   Int                    @default(0)
   lastAttemptAt   DateTime?
