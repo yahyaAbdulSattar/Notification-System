@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import notificationRouter from './api/routes/notification.route.js'
 import userRouter from './api/routes/user.routes.js'
+import { snapshot } from "./metrics/metrics.js";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use("/notifications", notificationRouter);
 app.use("/users", userRouter);
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
+app.get("/metrics", (_, res) => res.json(snapshot()));
 app.get("/db-test", async (_, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
