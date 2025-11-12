@@ -1,3 +1,4 @@
+import { prisma } from "../../../config/prisma.js";
 import { redis } from "../../../config/redis.js";
 
 export async function flushAllBatches() {
@@ -43,7 +44,30 @@ export async function flushBatch(key: string) {
     console.log(`[BATCH_DELIVERED email] user=${userId} count=${count}`);
   }
 
-  // optionally, mark messages as "sent" in DB in the future
+  // persist audit info for each notification
+  for (const notif of parsed) {
+    try {
+      await prisma.notificationAttempt.create({
+        data: {
+          notificationId: notif.id,
+          attemptNumber: 1,
+          result: "digest_sent",
+        },
+      });
+
+      await prisma.notification.update({
+        where: { id: notif.id },
+        data: {
+          status: "sent",
+          sentAt: new Date(),
+          attemptsCount: { increment: 1 },
+          lastAttemptAt: new Date(),
+        },
+      });
+    } catch (err) {
+      console.error(`[digest.worker] failed to persist digest record for notif:${notif.id}`, err);
+    }
+  }
 
   await redis.del(key);
 }
