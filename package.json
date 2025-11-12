@@ -33,7 +33,11 @@
     "worker": "tsx watch src/queues/worker.ts",
     "worker:digest": "tsx src/queues/digest.worker.ts",
     "worker:dlq": "tsx src/queues/dlq.worker.ts",
-    "burst": "node --no-warnings scripts/burst.js"
+    "burst": "node --no-warnings scripts/burst.js --",
+    "start:api": "tsx src/server.ts",
+    "start:worker": "tsx src/queues/worker.ts",
+    "start:digest": "tsx src/queues/digest.worker.ts",
+    "start:dlq": "tsx src/queues/dlq.worker.ts"
   },
   "keywords": [],
   "author": "",
