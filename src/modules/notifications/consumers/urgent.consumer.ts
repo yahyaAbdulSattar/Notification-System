@@ -1,5 +1,7 @@
 import { getRabbit } from "../../../config/rabbitmq.js";
+import { redis } from "../../../config/redis.js";
 import { EXCHANGE } from "../setup.js";
+import { tryConsumeToken } from "../util/throttle.util.js";
 
 // config
 const QUEUE = "notifications.urgent";
@@ -9,12 +11,18 @@ const RETRY_QUEUE_BY_ATTEMPT: Record<number, string> = {
   2: "notifications.retry.2",
   3: "notifications.retry.3",
 };
+const RETRY_DELAY_MS = 10_000; // short requeue delay for throttled users
+const BATCH_KEY_PREFIX = "batch:";
+const BATCH_TTL_SECONDS = 30;
+
+// Map of user throttle hits
+const throttleHits = new Map<string, number>();
 
 // Simulated delivery adapter that randomly fails at approx. 30% iof time
 async function deliverSimulated(preference: any, payload: any) {
   // simulate transient failure ~30% of the time
   const fail = Math.random() < 0.3;
-  
+
   // to simulaet 100% failure
   // const fail = true; 
   await new Promise((r) => setTimeout(r, 100)); // small latency
@@ -36,10 +44,41 @@ export async function startUrgentConsumer() {
 
     // read attempts from headers (fallback to 0)
     const currentAttempts = Number(msg.properties.headers?.attempts ?? 0);
+    const data = JSON.parse(msg.content.toString());
+    const { userId, taskId, preference } = data;
 
     try {
-      const data = JSON.parse(msg.content.toString());
-      const { userId, taskId, preference } = data;
+      const { allowed, tokensLeft } = await tryConsumeToken(userId);
+      if (!allowed) {
+        const hits = (throttleHits.get(userId) ?? 0) + 1;
+        throttleHits.set(userId, hits);
+
+        console.warn(`[throttle] user:${userId} blocked (tokens=0, hit=${hits})`);
+
+        if (hits < 3) {
+          // Requeue after short delay
+          setTimeout(() => {
+            channel.sendToQueue(QUEUE, Buffer.from(JSON.stringify(data)), {
+              persistent: true,
+              contentType: "application/json",
+              headers: msg.properties.headers, // preserve attempts
+            });
+          }, RETRY_DELAY_MS);
+          console.log(`[throttle] requeued after ${RETRY_DELAY_MS / 1000}s user:${userId}`);
+        } else {
+          // Burst-to-digest fallback (move to Redis batch buffer)
+          const userKey = `${BATCH_KEY_PREFIX}${userId}`;
+          await redis.rpush(userKey, JSON.stringify(data));
+          await redis.expire(userKey, BATCH_TTL_SECONDS);
+          console.log(`[throttle] user:${userId} moved to digest buffer`);
+        }
+
+        channel.ack(msg);
+        return;
+      }
+
+      console.log(`[throttle] user:${userId} allowed (tokens left=${tokensLeft})`);
+
       console.log(`[urgent.worker] processing user:${userId} task:${taskId} attempts=${currentAttempts}`);
 
       // Simulated delivery: respect channel and simulate success/failure
@@ -53,7 +92,7 @@ export async function startUrgentConsumer() {
         console.log(`[DELIVERED email] user:${userId} task:${taskId}`);
       }
 
-      // On success, ack and (optionally) update DB to sent.
+      throttleHits.set(userId, 0); // reset after success
       channel.ack(msg);
 
     } catch (err: any) {
