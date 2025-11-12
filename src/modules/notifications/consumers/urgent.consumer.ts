@@ -14,6 +14,9 @@ const RETRY_QUEUE_BY_ATTEMPT: Record<number, string> = {
 async function deliverSimulated(preference: any, payload: any) {
   // simulate transient failure ~30% of the time
   const fail = Math.random() < 0.3;
+  
+  // to simulaet 100% failure
+  // const fail = true; 
   await new Promise((r) => setTimeout(r, 100)); // small latency
   if (fail) throw new Error("simulated transient delivery failure");
   // otherwise treat as success
