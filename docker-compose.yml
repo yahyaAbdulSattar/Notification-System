@@ -29,6 +29,11 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
@@ -46,9 +51,12 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      - postgres
-      - rabbitmq
-      - redis
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules
@@ -60,9 +68,12 @@ services:
     command: npm run start:worker
     env_file: .env
     depends_on:
-      - rabbitmq
-      - redis
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules
@@ -70,16 +81,18 @@ services:
     environment:
       - WORKER_ID=worker-1
 
-
   digest-worker:
     build: .
     container_name: notif-digest-worker
     command: npm run start:digest
     env_file: .env
     depends_on:
-      - redis
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules
@@ -91,8 +104,10 @@ services:
     command: npm run start:dlq
     env_file: .env
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules
