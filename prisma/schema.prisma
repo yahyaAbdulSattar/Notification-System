@@ -30,20 +30,39 @@ model UserPreference {
 }
 
 model Notification {
-  id         String   @id @default(uuid())
-  taskId     String
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  priority   String
-  eventType  String
-  status     String   // 'pending' | 'sent' | 'failed'
-  createdAt  DateTime @default(now())
+  id              String                 @id @default(uuid())
+  taskId          String
+  userId          String
+  user            User                   @relation(fields: [userId], references: [id])
+  priority        String
+  eventType       String
+  channel         String                 // push | email | both
+  status          String                 // pending | sent | failed
+  attemptsCount   Int                    @default(0)
+  lastAttemptAt   DateTime?
+  createdAt       DateTime               @default(now())
+  sentAt          DateTime?
+  attempts        NotificationAttempt[]
+  dlqEntries      DlqNotification[]
 }
 
+model NotificationAttempt {
+  id              String        @id @default(uuid())
+  notificationId  String
+  notification    Notification  @relation(fields: [notificationId], references: [id])
+  attemptNumber   Int
+  result          String        // success | fail | throttled | digest_buffered
+  error           String?
+  createdAt       DateTime      @default(now())
+}
+
+
 model DlqNotification {
-  id         String   @id @default(uuid())
-  payload    Json
-  reason     String
-  attempts   Int
-  createdAt  DateTime @default(now())
+  id              String        @id @default(uuid())
+  notificationId  String?
+  notification    Notification? @relation(fields: [notificationId], references: [id])
+  payload         Json
+  reason          String
+  attempts        Int
+  createdAt       DateTime      @default(now())
 }
