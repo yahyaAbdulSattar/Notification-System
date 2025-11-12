@@ -34,8 +34,16 @@ model Notification {
   taskId     String
   userId     String
   user       User     @relation(fields: [userId], references: [id])
-  priority   Strin
+  priority   String
   eventType  String
   status     String   // 'pending' | 'sent' | 'failed'
+  createdAt  DateTime @default(now())
+}
+
+model DlqNotification {
+  id         String   @id @default(uuid())
+  payload    Json
+  reason     String
+  attempts   Int
   createdAt  DateTime @default(now())
 }
