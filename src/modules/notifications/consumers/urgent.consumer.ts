@@ -1,3 +1,4 @@
+import { prisma } from "../../../config/prisma.js";
 import { getRabbit } from "../../../config/rabbitmq.js";
 import { redis } from "../../../config/redis.js";
 import { EXCHANGE } from "../setup.js";
@@ -71,8 +72,10 @@ export async function startUrgentConsumer() {
           await redis.rpush(userKey, JSON.stringify(data));
           await redis.expire(userKey, BATCH_TTL_SECONDS);
           console.log(`[throttle] user:${userId} moved to digest buffer`);
+          await recordAttempt(data.id, currentAttempts + 1, "digest_buffered");
         }
 
+        await recordAttempt(data.id, currentAttempts + 1, "throttled");
         channel.ack(msg);
         return;
       }
@@ -86,10 +89,12 @@ export async function startUrgentConsumer() {
       if (preference?.channel === "push" || preference?.channel === "both") {
         await deliverSimulated(preference, { channel: "push", userId, taskId });
         console.log(`[DELIVERED push] user:${userId} task:${taskId}`);
+        await recordAttempt(data.id, currentAttempts + 1, "success");
       }
       if (preference?.channel === "email" || preference?.channel === "both") {
         await deliverSimulated(preference, { channel: "email", userId, taskId });
         console.log(`[DELIVERED email] user:${userId} task:${taskId}`);
+        await recordAttempt(data.id, currentAttempts + 1, "success");
       }
 
       throttleHits.set(userId, 0); // reset after success
@@ -112,6 +117,18 @@ export async function startUrgentConsumer() {
           contentType: "application/json",
           headers: { attempts: nextAttempt },
         });
+
+
+        // recording attempt in db
+        await prisma.dlqNotification.create({
+          data: {
+            notificationId: data.id,
+            payload: data,
+            reason: err.message || "delivery_failed",
+            attempts: nextAttempt,
+          },
+        });
+        await recordAttempt(data.id, nextAttempt, "fail", err.message);
         console.error(`[urgent.worker] moved to DLQ user:${dlqPayload.payload.userId} task:${dlqPayload.payload.taskId} attempts=${nextAttempt}`);
         channel.ack(msg);
       } else {
@@ -125,6 +142,7 @@ export async function startUrgentConsumer() {
             headers: { attempts: nextAttempt },
           });
           console.error(`[urgent.worker] no retry queue for attempt ${nextAttempt} → moved to DLQ`);
+          await recordAttempt(data.id, nextAttempt, "fail", err.message);
           channel.ack(msg);
           return;
         }
@@ -140,5 +158,30 @@ export async function startUrgentConsumer() {
         channel.ack(msg);
       }
     }
+  });
+}
+
+export async function recordAttempt(notificationId: string, attemptNumber: number, result: string, error?: string) {
+  await prisma.notificationAttempt.create({
+    data: {
+      notificationId,
+      attemptNumber,
+      result,
+      error: error || null,
+    },
+  });
+
+  // increment attemptsCount + set lastAttemptAt
+  await prisma.notification.update({
+    where: { id: notificationId },
+    data: {
+      attemptsCount: { increment: 1 },
+      lastAttemptAt: new Date(),
+      ...(result === "success" && {
+        status: "sent",
+        sentAt: new Date(),
+      }),
+      ...(result === "fail" && { status: "failed" }),
+    },
   });
 }
