@@ -5,7 +5,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "ioredis": "^5.8.2"
+    "ioredis": "^5.8.2",
+    "minimist": "^1.2.8",
+    "node-fetch": "^3.3.2"
   },
   "name": "notif-system",
   "version": "1.0.0",
@@ -30,7 +32,8 @@
     "start": "node dist/server.js",
     "worker": "tsx watch src/queues/worker.ts",
     "worker:digest": "tsx src/queues/digest.worker.ts",
-    "worker:dlq": "tsx src/queues/dlq.worker.ts"
+    "worker:dlq": "tsx src/queues/dlq.worker.ts",
+    "burst": "node --no-warnings scripts/burst.js"
   },
   "keywords": [],
   "author": "",
